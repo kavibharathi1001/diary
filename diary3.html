@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cartoon Diary Image Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+  body {
+    margin: 0; padding: 0;
+    background: linear-gradient(135deg, #220022, #440044);
+    font-family: 'Permanent Marker', cursive;
+    color: #ffccff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  h1 {
+    margin: 2rem 0 1rem;
+    text-shadow: 0 0 10px #ff66cc;
+  }
+  form {
+    background: #330033cc;
+    padding: 20px;
+    border-radius: 16px;
+    width: 320px;
+    box-shadow: 0 0 20px #ff33ccaa;
+  }
+  label {
+    display: block;
+    margin: 12px 0 6px;
+    font-weight: bold;
+  }
+  input, textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: none;
+    padding: 10px;
+    font-family: 'Permanent Marker', cursive;
+    font-size: 1.1rem;
+    resize: vertical;
+    background: #550055;
+    color: #fff;
+  }
+  input[type="date"] {
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+  }
+  button {
+    margin-top: 16px;
+    background: #ff33cc;
+    border: none;
+    padding: 14px;
+    border-radius: 24px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 0 15px #ff33cc;
+    color: white;
+    transition: background 0.3s ease;
+    width: 100%;
+  }
+  button:hover {
+    background: #e600b8;
+  }
+  #entries {
+    margin: 20px auto;
+    width: 90vw;
+    max-width: 600px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #330033cc;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 0 15px #ff33ccaa;
+  }
+  .entry {
+    border-bottom: 1px solid #ff33cc44;
+    padding: 8px 0;
+  }
+  .entry:last-child {
+    border-bottom: none;
+  }
+  .entry-date {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+  .entry-tags {
+    margin: 4px 0;
+    font-size: 1.3rem;
+  }
+  .entry-text {
+    white-space: pre-wrap;
+  }
+  #canvasContainer {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+  }
+  .canvas-wrap {
+    position: relative;
+    display: inline-block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 20px #ff33ccaa;
+  }
+  .canvas-wrap canvas {
+    display: block;
+    border-radius: 12px;
+  }
+  .download-btn {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: #ff33cccc;
+    border: none;
+    color: white;
+    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Permanent Marker', cursive;
+  }
+  .download-btn:hover {
+    background: #e600b8cc;
+  }
+</style>
+</head>
+<body>
+
+<h1>Cartoon Diary Image Generator</h1>
+
+<form id="entryForm" aria-label="Add diary entry form">
+  <label for="date">Date:</label>
+  <input type="date" id="date" required />
+  
+  <label for="tags">Tags (comma separated):</label>
+  <input type="text" id="tags" placeholder="happy, work, travel" />
+  
+  <label for="text">Diary Entry:</label>
+  <textarea id="text" rows="5" required placeholder="Write your diary here..."></textarea>
+  
+  <button type="submit">Add Entry</button>
+</form>
+
+<div id="entries" aria-live="polite" aria-relevant="additions"></div>
+
+<button id="generateImagesBtn" style="margin-top: 20px;">Generate Cartoon Images</button>
+
+<div id="canvasContainer"></div>
+
+<script>
+  const form = document.getElementById('entryForm');
+  const entriesDiv = document.getElementById('entries');
+  const generateBtn = document.getElementById('generateImagesBtn');
+  const canvasContainer = document.getElementById('canvasContainer');
+
+  // Store entries in memory (optionally you can use localStorage)
+  let diaryEntries = [];
+
+  // Emoji tags for cartoon vibe
+  const tagEmojis = {
+    happy: '😄',
+    sad: '😢',
+    travel: '✈️',
+    work: '💻',
+    family: '👪',
+    love: '💖',
+    health: '💪',
+    party: '🎉',
+    angry: '😠',
+    tired: '😴',
+    other: '🌟'
+  };
+
+  function getEmojisForTags(tags) {
+    return tags.map(tag => tagEmojis[tag.toLowerCase()] || tagEmojis.other).join(' ');
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+  }
+
+  function renderEntries() {
+    if (diaryEntries.length === 0) {
+      entriesDiv.innerHTML = '<p style="opacity:0.6; text-align:center;">No entries yet.</p>';
+      return;
+    }
+    entriesDiv.innerHTML = diaryEntries
+      .sort((a,b) => new Date(a.date) - new Date(b.date))
+      .map(entry => `
+        <div class="entry">
+          <div class="entry-date">${formatDate(entry.date)}</div>
+          <div class="entry-tags">${getEmojisForTags(entry.tags)}</div>
+          <div class="entry-text">${entry.text.replace(/\n/g, '<br>')}</div>
+        </div>
+      `).join('');
+  }
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const date = form.date.value;
+    const text = form.text.value.trim();
+    const tagsInput = form.tags.value.trim();
+    if (!date || !text) {
+      alert('Please fill date and diary entry text.');
+      return;
+    }
+    const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+    diaryEntries.push({ date, text, tags });
+    renderEntries();
+    form.reset();
+  });
+
+  // Cartoon style drawing on canvas for each diary entry
+  function drawCartoonImage(entry) {
+    const width = 480;
+    const height = 320;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, '#330033');
+    grad.addColorStop(1, '#660066');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Cartoon bubbles (circles)
+    for (let i = 0; i < 15; i++) {
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 102, 204, ${Math.random() * 0.1 + 0.05})`;
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      const radius = 15 + Math.random() * 30;
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    // Draw date at top-left
+    ctx.font = '24px Permanent Marker, cursive';
+    ctx.fillStyle = '#ff99cc';
+    ctx.shadowColor = '#ff33cc';
+    ctx.shadowBlur = 8;
+    ctx.textBaseline = 'top';
+    ctx.fillText(formatDate(entry.date), 20, 16);
+
+    // Draw tags emojis below date
+    const emojis = getEmojisForTags(entry.tags);
+    ctx.font = '32px serif';
+    ctx.fillText(emojis, 20, 50);
+
+    // Draw diary text with wrapping
+    ctx.shadowBlur = 5;
+    ctx.fillStyle = '#ffc0ff';
+    ctx.font = '22px Permanent Marker, cursive';
+    const maxWidth = width - 40;
+    const lineHeight = 28;
+    const textX = 20;
+    let textY = 100;
+
+    function wrapText(text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '';
+      for (let n = 0; n < words.length; n++) {
+        let testLine = line + words[n] + ' ';
+        let metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && line !== '') {
+          ctx.fillText(line, x, y);
+          line = words[n] + ' ';
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, y);
+    }
+
+    wrapText(entry.text, textX, textY, maxWidth, lineHeight);
+
+    return canvas;
+  }
+
+  generateBtn.addEventListener('click', () => {
+    if (diaryEntries.length === 0) {
+      alert('Add some diary entries first!');
+      return;
+    }
+    canvasContainer.innerHTML = '';
+    diaryEntries.forEach((entry, idx) => {
+      const canvas = drawCartoonImage(entry);
+      const wrap = document.createElement('div');
+      wrap.className = 'canvas-wrap';
+      wrap.appendChild(canvas);
+
+      // Download button
+      const btn = document.createElement('button');
+      btn.className = 'download-btn';
+      btn.textContent = 'Download';
+      btn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = `Diary_${entry.date}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+      wrap.appendChild(btn);
+
+      canvasContainer.appendChild(wrap);
+    });
+  });
+
+  renderEntries();
+</script>
+
+</body>
+</html>

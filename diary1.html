@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Diary Movie Maker - Professional with Features</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  header {
+    font-weight: 700;
+    font-size: 2.4rem;
+    margin: 2rem 0 1rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.7);
+  }
+  main {
+    background: rgba(255 255 255 / 0.1);
+    border-radius: 20px;
+    padding: 25px 40px;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  input[type="date"], textarea, input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    transition: box-shadow 0.3s;
+  }
+  input[type="date"]:focus, textarea:focus, input[type="text"]:focus {
+    outline: none;
+    box-shadow: 0 0 8px #764ba2;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+  button {
+    background: white;
+    color: #764ba2;
+    font-weight: 600;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 20px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    transition: background 0.3s, color 0.3s;
+    font-size: 1.1rem;
+  }
+  button:hover {
+    background: #764ba2;
+    color: white;
+  }
+  .entries-list {
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 1rem;
+    border-top: 1px solid rgba(255 255 255 / 0.3);
+    padding-top: 1rem;
+  }
+  .entry {
+    margin-bottom: 1rem;
+    background: rgba(255 255 255 / 0.15);
+    border-radius: 12px;
+    padding: 14px 16px;
+    user-select: text;
+    transition: background 0.3s;
+    position: relative;
+  }
+  .entry:hover {
+    background: rgba(255 255 255 / 0.25);
+  }
+  .entry-date {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    text-shadow: 0 0 2px #333;
+  }
+  .entry-text {
+    white-space: pre-wrap;
+    font-size: 1.05rem;
+  }
+  .entry-tags {
+    margin-top: 8px;
+  }
+  .tag {
+    display: inline-block;
+    background: #764ba2aa;
+    color: white;
+    padding: 3px 10px;
+    margin-right: 6px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    user-select: none;
+    box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  }
+  #status {
+    margin-top: 1rem;
+    font-weight: 600;
+    min-height: 1.5rem;
+    text-align:center;
+  }
+  #progressBar {
+    width: 100%;
+    height: 10px;
+    border-radius: 10px;
+    background: rgba(255 255 255 / 0.3);
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  #progress {
+    height: 100%;
+    background: #764ba2;
+    width: 0%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+  }
+  #calendar {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    justify-content: center;
+  }
+  .day {
+    width: 36px;
+    height: 36px;
+    margin: 4px;
+    border-radius: 8px;
+    line-height: 36px;
+    text-align: center;
+    cursor: default;
+    user-select: none;
+    transition: background 0.3s;
+    position: relative;
+    font-weight: 600;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  }
+  .day.with-entry {
+    background: #764ba2cc;
+    box-shadow: 0 0 8px #ffeb3b;
+  }
+  .day.with-entry:hover::after {
+    content: attr(data-text);
+    white-space: nowrap;
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #764ba2;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    box-shadow: 0 0 8px #0009;
+    pointer-events: none;
+    z-index: 10;
+  }
+  canvas {
+    display: none;
+  }
+</style>
+</head>
+<body>
+<header>Diary Movie Maker with Pro Features</header>
+<main>
+  <form id="diaryForm" aria-label="Diary Entry Form">
+    <label for="entryDate">Date</label>
+    <input type="date" id="entryDate" required aria-required="true" />
+    
+    <label for="entryTags">Tags (comma separated)</label>
+    <input type="text" id="entryTags" placeholder="e.g. happy, work, travel" aria-describedby="tagHelp" />
+    <small id="tagHelp" style="color:#ddd; font-size:0.8rem; margin-bottom:1rem; display:block;">Tags help organize your entries</small>
+
+    <label for="entryText">Diary Entry</label>
+    <textarea id="entryText" placeholder="Write your diary here..." required aria-required="true"></textarea>
+    <button type="submit">Add Entry</button>
+  </form>
+
+  <div id="calendar" aria-label="Diary Calendar"></div>
+
+  <div class="entries-list" id="entriesList" aria-live="polite" aria-relevant="additions"></div>
+
+  <button id="generateMovieBtn" style="margin-top:20px;">Generate Movie (Download Video)</button>
+
+  <div id="status" role="alert" aria-live="assertive"></div>
+
+  <div id="progressBar" aria-hidden="true"><div id="progress"></div></div>
+
+  <canvas id="videoCanvas" width="720" height="480" aria-hidden="true"></canvas>
+
+  <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2022/03/25/audio_52b7e3779a.mp3?filename=relaxing-piano-background-11018.mp3" loop crossorigin="anonymous"></audio>
+</main>
+
+<script>
+  const diaryForm = document.getElementById('diaryForm');
+  const entryDate = document.getElementById('entryDate');
+  const entryText = document.getElementById('entryText');
+  const entryTags = document.getElementById('entryTags');
+  const entriesList = document.getElementById('entriesList');
+  const generateMovieBtn = document.getElementById('generateMovieBtn');
+  const status = document.getElementById('status');
+  const progressBar = document.getElementById('progress');
+  const calendar = document.getElementById('calendar');
+  const canvas = document.getElementById('videoCanvas');
+  const ctx = canvas.getContext('2d');
+  const bgMusic = document.getElementById('bgMusic');
+
+  let entries = JSON.parse(localStorage.getItem('diaryEntries')) || [];
+
+  function formatDate(dateStr) {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateStr).toLocaleDateString(undefined, options);
+  }
+
+  function renderEntries() {
+    if (entries.length === 0) {
+      entriesList.innerHTML = '<p style="opacity:0.7;text-align:center;">No diary entries yet.</p>';
+      calendar.innerHTML = '';
+      return;
+    }
+    entriesList.innerHTML = '';
+    entries.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(({date,text,tags})=>{
+      const div = document.createElement('div');
+      div.className = 'entry';
+      const tagHtml = tags && tags.length ? tags.map(t=>`<span class="tag">${t}</span>`).join('') : '';
+      div.innerHTML = `
+        <div class="entry-date">${formatDate(date)}</div>
+        <div class="entry-text">${text.replace(/\n/g,'<br>')}</div>
+        <div class="entry-tags">${tagHtml}</div>`;
+      entriesList.appendChild(div);
+    });
+    renderCalendar();
+  }
+
+  function saveEntries() {
+    localStorage.setItem('diaryEntries', JSON.stringify(entries));
+  }
+
+  function renderCalendar() {
+    calendar.innerHTML = '';
+    if(entries.length === 0) return;
+
+    // We'll display calendar for the month of the first entry
+    const firstDate = new Date(entries[0].date);
+    const year = firstDate.getFullYear();
+    const month = firstDate.getMonth();
+
+    // Days in month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Build day squares
+    for(let day = 1; day <= daysInMonth; day++) {
+      const dayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'day';
+      dayDiv.textContent = day;
+
+      // Check if diary entry exists for day
+      const entry = entries.find(en => en.date === dayStr);
+      if(entry) {
+        dayDiv.classList.add('with-entry');
+        const previewText = entry.text.length > 50 ? entry.text.slice(0, 50) + '...' : entry.text;
+        dayDiv.setAttribute('data-text', previewText);
+      }
+
+      calendar.appendChild(dayDiv);
+    }
+  }
+
+  diaryForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const dateVal = entryDate.value;
+    const textVal = entryText.value.trim();
+    const tagsVal = entryTags.value.trim();
+    if (!dateVal || !textVal) {
+      alert('Please enter both date and diary text.');
+      return;
+    }
+    const tagsArray = tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+
+    // Check existing entry for date
+    const existingIndex = entries.findIndex(en => en.date === dateVal);
+    if(existingIndex > -1) {
+      if(!confirm('Entry for this date exists. Overwrite?')) return;
+      entries[existingIndex].text = textVal;
+      entries[existingIndex].tags = tagsArray;
+    } else {
+      entries.push({date: dateVal, text: textVal, tags: tagsArray});
+    }
+    saveEntries();
+    renderEntries();
+    entryDate.value = '';
+    entryText.value = '';
+    entryTags.value = '';
+    status.textContent = 'Entry saved! Add more or generate your movie.';
+  });
+
+  // Icon for tags (simple emoji mapping)
+  const tagIcons = {
+    happy: '😊',
+    sad: '😢',
+    travel: '✈️',
+    work: '💼',
+    family: '👨‍👩‍👧‍👦',
+    love: '❤️',
+    health: '💪',
+    other: '⭐'
+  };
+
+  function drawEntryOnCanvas(text, date, tags, opacity, zoom=1) {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0,0,w,h);
+
+    // Background gradient
+    let grad = ctx.createLinearGradient(0,0,w,h);
+    grad.addColorStop(0, '#764ba2');
+    grad.addColorStop(1, '#667eea');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,w,h);
+
+    ctx.globalAlpha = opacity;
+
+    // Date text
+    ctx.fillStyle = 'white';
+    ctx.font = '28px Poppins, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(formatDate(date), w/2, 60);
+
+    // Tags row
+    if(tags && tags.length) {
+      ctx.font = '26px Poppins, sans-serif';
+      ctx.textAlign = 'center';
+      const tagStr = tags.map(t => tagIcons[t.toLowerCase()] || '⭐').join(' ');
+      ctx.fillText(tagStr, w/2, 100);
+    }
+
+    // Diary text - multiline, word wrap, zoom effect
+    ctx.font = `${22 * zoom}px Poppins, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+
+    const maxWidth = w - 60;
+    const lineHeight = 30 * zoom;
+    const words = text.split(' ');
+    let line = '';
+    let y = 150;
+
+    for(let n=0; n<words.length; n++) {
+      let testLine = line + words[n] + ' ';
+      let metrics = ctx.measureText(testLine);
+      let testWidth = metrics.width;
+      if(testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, w/2, y);
+        line = words[n] + ' ';
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, w/2, y);
+
+    ctx.globalAlpha = 1.0;
+  }
+
+  async function generateVideo() {
+    if(entries.length === 0) {
+      alert('No diary entries to generate video.');
+      return;
+    }
+
+    generateMovieBtn.disabled = true;
+    status.textContent = 'Preparing video...';
+    progressBar.style.width = '0%';
+
+    // Sort entries by date ascending
+    const sortedEntries = entries.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+    // Video settings
+    const fps = 30;
+    const secondsPerEntry = 6; // more time for zoom effect
+    const totalFramesPerEntry = fps * secondsPerEntry;
+    const fadeFrames = fps * 1; // 1 second fade in/out
+    const holdFrames = totalFramesPerEntry - 2*fadeFrames; // rest hold fully visible
+
+    // Setup MediaRecorder to capture canvas stream
+    const stream = canvas.captureStream(fps);
+    const recordedChunks = [];
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+    mediaRecorder.ondataavailable = function(e) {
+      if(e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = function() {
+      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = 'DiaryMovie.webm';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+      status.textContent = 'Video created! Check your downloads.';
+      generateMovieBtn.disabled = false;
+      progressBar.style.width = '0%';
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+    };
+
+    mediaRecorder.start();
+    status.textContent = 'Recording video...';
+    bgMusic.volume = 0.2;
+    try { await bgMusic.play(); } catch(e) { /* Autoplay block fallback */ }
+
+    let frameCount = 0;
+    const totalFrames = totalFramesPerEntry * sortedEntries.length;
+
+    for(let entry of sortedEntries) {
+      for(let f=0; f < totalFramesPerEntry; f++) {
+        let opacity;
+        if(f < fadeFrames) opacity = f / fadeFrames;
+        else if(f >= totalFramesPerEntry - fadeFrames) opacity = (totalFramesPerEntry - f) / fadeFrames;
+        else opacity = 1;
+
+        // Zoom from 1.0 to 1.08
+        const zoom = 1 + 0.08 * (f / totalFramesPerEntry);
+
+        drawEntryOnCanvas(entry.text, entry.date, entry.tags, opacity, zoom);
+
+        frameCount++;
+        const progPercent = Math.floor((frameCount / totalFrames) * 100);
+        progressBar.style.width = progPercent + '%';
+
+        await new Promise(r => setTimeout(r, 1000/fps));
+      }
+    }
+
+    mediaRecorder.stop();
+  }
+
+  generateMovieBtn.addEventListener('click', generateVideo);
+
+  // Initial render
+  renderEntries();
+</script>
+</body>
+</html>
